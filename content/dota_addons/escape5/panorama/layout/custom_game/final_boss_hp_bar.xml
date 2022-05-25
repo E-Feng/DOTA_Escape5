@@ -1,0 +1,16 @@
+<root>
+	<styles>
+		<include src="s2r://panorama/styles/dotastyles.css"/>
+		<include src="file://{resources}/styles/custom_game/final_boss_hp_bar.css"/>
+	</styles>
+	<scripts>
+		<include src="file://{resources}/scripts/custom_game/final_boss_hp_bar.js"/>
+	</scripts>
+
+  <Panel class="BarebonesBaseHud" style="width:100%;" hittest="false">
+    <Panel id="FinalBossHPContainer" hittest="false">
+      <ProgressBar id="BossProgressBar" value="1.0"/>
+      <Label id="HPLabel" text="10/10"/>
+    </Panel>
+  </Panel>
+</root>
