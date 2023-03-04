@@ -3,37 +3,40 @@
 	//=================================================================================================================
 	// Magnus: Skewer (Lua version)
 	//=================================================================================================================
-	"magnus_skewer_lua"
+	"boots_travel_lua"
 	{
 		// Ability Technical Aspect
 		// base script folder	: scripts/vscripts
 		// base texture folder	: resource/flash3/images/spellicons
 		//-------------------------------------------------------------------------------------------------------------
 		"BaseClass"						"ability_lua"
-		"ScriptFile"					"ability_lua/skewer/magnus_skewer_lua"
-		"AbilityTextureName"			"magnus_skewer_lua"
+		"ScriptFile"					"ability_lua/boots_travel/boots_travel_lua"
+		"AbilityTextureName"			"tinker_keen_teleport"
 		"FightRecapLevel"				"1"
-		"MaxLevel"						"4"
+		"MaxLevel"						"1"
 
 		"HasScepterUpgrade"			"1"
 		
 		// Ability General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityType"					"DOTA_ABILITY_TYPE_BASIC"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES"
-		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_HERO"
+		"AbilityBehavior" "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_CHANNELLED | DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING"
+		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_FRIENDLY"
+		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_BASIC"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_YES"
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
 
 		// Ability Casting
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCastPoint"				"0.3 0.3 0.3 0.3"
+		"AbilityCastRange"				"475"
+		"AbilityChannelTime"			"2"
+
 
 		// Ability Resource
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"0"
-		"AbilityManaCost"				"0"
+		"AbilityCooldown"				"2"
+		"AbilityManaCost"				"1"
 
 		// Damage
 		//-------------------------------------------------------------------------------------------------------------
@@ -45,52 +48,7 @@
 			"01"
 			{
 				"var_type"				"FIELD_INTEGER"
-				"skewer_speed"					"900"
-			}
-			"02"
-			{
-				"var_type"				"FIELD_INTEGER"
-				"range"					"1500 1500 1500 1500"
-			}
-			"03"
-			{
-				"var_type"				"FIELD_INTEGER"
-				"slow_pct"				"10 20 30 40"
-			}
-			"04"
-			{
-				"var_type"				"FIELD_INTEGER"
-				"skewer_radius"				"75"
-			}
-			"05"
-			{
-				"var_type"				"FIELD_FLOAT"
-				"slow_duration"				"3.25"
-			}			
-			"06"
-			{
-				"var_type"				"FIELD_INTEGER"
-				"skewer_damage"			"0"
-			}			
-			"07"
-			{
-				"var_type"				"FIELD_INTEGER"
-				"tree_radius"				"200"
-			}			
-			"08"
-			{
-				"var_type"				"FIELD_INTEGER"
-				"tool_attack_slow"				"10 20 30 40"
-			}	
-			"09"
-			{
-				"var_type"				"FIELD_FLOAT"
-				"skewer_cooldown"				"6"
-			}
-			"10"
-			{
-				"var_type"				"FIELD_INTEGER"
-				"skewer_manacost"				"40"
+				"range"					"475"
 			}
 		}
 	}

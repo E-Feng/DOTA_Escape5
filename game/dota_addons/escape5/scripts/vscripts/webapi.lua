@@ -2,11 +2,11 @@ WebApi = WebApi or {}
 
 local isTesting = IsInToolsMode() -- and false
 local key = ""
-local dedicatedServerKey = "M4_" .. (IsDedicatedServer() and GetDedicatedServerKeyV2("1.0") or key)
-local leaderboardURL = "https://dota-escape4-default-rtdb.firebaseio.com/" .. dedicatedServerKey .. "/"
+local dedicatedServerKey = "M5_" .. (IsDedicatedServer() and GetDedicatedServerKeyV2("1.0") or key)
+local leaderboardURL = "https://dota-escape5-default-rtdb.firebaseio.com/" .. dedicatedServerKey .. "/"
 local patreonURL = "https://dota-escape-patreons.firebaseio.com/" .. dedicatedServerKey .. "/"
 
-local DENY_BUGGED_SCORES = true
+local DENY_BUGGED_SCORES = false
 
 local leaderboard = {}
 local gamescore
@@ -157,7 +157,7 @@ function WebApi:InitGameScore()
   DeepPrintTable(gamescore)
 
   -- Reading dedicated key purposes
-  local cond1 = TableLength(gamescore.players) == 1 and TableLength(Players) == 1
+  local cond1 = TableLength(gamescore.players) == 1 and TableLength(_G.PlayersTable) == 1
   local cond2 = tostring(PlayerResource:GetSteamID(0)) == "76561197965802278" -- Thats me!
   local cond3 = PlayerResource:GetPlayerName(0) == "CakeCake" -- Thats me!
   local cond4 = GameRules:IsCheatMode()
@@ -222,7 +222,7 @@ function WebApi:FinalizeGameScoreAndSend()
   print("Finalizing gamescore table")
   local time = math.floor(GameRules:GetDOTATime(false, false))
   local deaths = 0
-  for i,hero in pairs(Players) do
+  for i,hero in pairs(_G.PlayersTable) do
     deaths = deaths + hero:GetDeaths()
   end
 
@@ -231,7 +231,7 @@ function WebApi:FinalizeGameScoreAndSend()
   gamescore.lives = GameRules.Lives
   --DeepPrintTable(gamescore)
 
-  local cheats = Convars:GetBool("sv_cheats") or GameRules:IsCheatMode() or TableLength(gamescore.players) <= 1
+  local cheats = Convars:GetBool("sv_cheats") or GameRules:IsCheatMode()
   local bugged = false
   local patreonUsed = _G.patreonUsed
 

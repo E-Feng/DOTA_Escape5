@@ -29,6 +29,34 @@
     }
   }
 
+  "patrol_unit_passive_selectable"
+  {
+    // General
+    "BaseClass"                 "ability_datadriven"
+    "AbilityBehavior"           "DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_HIDDEN"
+    "AbilityUnitTargetType"     "DOTA_UNIT_TARGET_ALL"
+    "AbilityTextureName"        "omniknight_guardian_angel"
+
+    // "Modifiers"
+    "Modifiers"
+    {
+      "patrol_unit_state"
+      {
+        "Passive"      "1"
+        "IsHidden"     "1"
+        "TextureName"  "fountain_glyph"
+         
+        "States"
+        {
+          "MODIFIER_STATE_NO_HEALTH_BAR"       "MODIFIER_STATE_VALUE_ENABLED"
+          //"MODIFIER_STATE_INVULNERABLE"        "MODIFIER_STATE_VALUE_ENABLED"
+          //"MODIFIER_STATE_UNSELECTABLE"        "MODIFIER_STATE_VALUE_ENABLED"
+          "MODIFIER_STATE_NO_UNIT_COLLISION"   "MODIFIER_STATE_VALUE_ENABLED"
+        }
+      }
+    }
+  }
+
   //========================================================================================================================
   "patrol_unit_non_involn_passive"
   {
@@ -223,12 +251,12 @@
       "01"
       {
         "var_type"           "FIELD_INTEGER"
-        "radius"             "50 60 100 150"
+        "radius"             "50 60 45 150"
       }
       "02"
       {
         "var_type"            "FIELD_INTEGER"
-        "rate"              "0.5 0.25 0.25 0.25"
+        "rate"              "0.2 0.2 0.2 0.2"
       }
     }
   }
@@ -351,6 +379,7 @@
               "MODIFIER_STATE_INVULNERABLE"    "MODIFIER_STATE_VALUE_ENABLED"
               "MODIFIER_STATE_NOT_ON_MINIMAP" "MODIFIER_STATE_VALUE_ENABLED"
               "MODIFIER_STATE_NO_HEALTH_BAR"  "MODIFIER_STATE_VALUE_ENABLED"
+              "MODIFIER_STATE_NO_UNIT_COLLISION"   "MODIFIER_STATE_VALUE_ENABLED"
           }
       }
     }

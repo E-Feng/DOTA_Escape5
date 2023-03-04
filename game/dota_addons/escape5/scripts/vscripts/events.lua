@@ -75,11 +75,11 @@ function barebones:OnNPCSpawned(keys)
 
 		hero.id = hero:GetPlayerID()
 		if hero:GetTeamNumber() == DOTA_TEAM_GOODGUYS then
-			Players[hero.id] = hero
-			--barebones:SetPlayerColor(hero)
+			table.insert(_G.PlayersTable, hero)
+
 			print("----------Player insertion into table----------")
 			print("Player Id (", hero.id, ") inserted into table")
-			print("Table is now length ", TableLength(Players))
+			print("Table is now length ", #_G.PlayersTable)
 			print("----------Player insertion finished----------")
 
 			local color = TeamColors[hero.id]
@@ -101,6 +101,8 @@ end
   
 ]]
 function barebones:OnHeroInGame(hero)
+	--PrintTable(hero)
+
 		-- Initializing hero parameters
 		local modelRad = hero:GetModelRadius()
 		local reviveRad = math.max(modelRad, REVIVE_RAD_MIN)
@@ -116,6 +118,9 @@ function barebones:OnHeroInGame(hero)
 		hero.outOfBoundsDeath = false
 		hero.mana = 0
 		hero.hookZ = 0
+
+		hero.hasGale = false
+		hero.galeParticle = 0
 
 
 	Timers:CreateTimer(0.5, function()
@@ -156,6 +161,11 @@ function barebones:OnHeroInGame(hero)
 
 		hero:AddAbility("self_immolation"):SetLevel(setImmoLevel)
 
+		-- Adding modifiers
+		--for _,modifierName in pairs(_G.modifierList) do
+		--	hero:AddNewModifier(hero, nil, modifierName, {})
+		--end
+
 
 		-- Adding items to inventory
 		hero:AddItemByName("item_boots")
@@ -193,7 +203,7 @@ function barebones:OnHeroInGame(hero)
 
 
 		-- Setting respawn if using debug
-		if USE_LEVEL_DEBUG and TableLength(Players) == 1 then
+		if USE_LEVEL_DEBUG and TableLength(_G.PlayersTable) == 1 then
 			local spawn = Entities:FindByName(nil, "checkpoint" .. tostring(LEVEL_DEBUG)):GetAbsOrigin()
 			GameRules.Checkpoint = spawn
 
@@ -302,40 +312,14 @@ function barebones:OnAbilityUsed(keys)
 	local hero = EntIndexToHScript(caster)
 
 
-	if ability_name == "invoker_sun_strike_custom" then
-		local playerName = PlayerResource:GetPlayerName(playerID)
-
-		hero.sunstrikesCasted = hero.sunstrikesCasted or 0
-		hero.sunstrikesHit = hero.sunstrikesHit or 0
-
-		hero.sunstrikesCasted = hero.sunstrikesCasted + 1
-
-		local tempHp = _G.BossHp
-		local color = "lime"
-		local status = " hit!"
-
-		Timers:CreateTimer(2, function()
-			if _G.BossHp == tempHp then
-				color = "red"
-				status = " missed!"
-			else
-				hero.sunstrikesHit = hero.sunstrikesHit + 1
-			end
-
-			local percentage = " (" .. hero.sunstrikesHit .. "/" .. hero.sunstrikesCasted .. ")"
-			local str = playerName .. percentage .. status
-			local msg = {
-				text = str,
-				duration = 3.0,
-				style={color=color, ["font-size"]="32px"}
-			}
-			Notifications:TopToAll(msg)
+	if ability_name == "ursa_enrage_custom" then
+		hero:AddNewModifier(hero, nil, "modifier_neutral_spell_immunity", {duration=0.3})
+	elseif ability_name == "weaver_time_lapse" then
+		Timers:CreateTimer(0, function()
+			hero:SetMana(hero.mana)
 		end)
-	elseif ability_name == "rattletrap_hookshot_custom" then
-		--print("Z pos after hook: ", hero:GetAbsOrigin().z)
-		hero.hookZ = hero:GetAbsOrigin().z
-	elseif ability_name == "enchantress_bunny_hop_custom" then
-		hero:AddNewModifier(hero, nil, "modifier_stunned", {duration=0.36})
+	elseif ability_name == "boots_travel_lua" then
+		hero.mana = 0
 	end
 
 	-- If you need to adjust abilities on their cast, use Order Filter or modifier events, not this
@@ -762,7 +746,7 @@ function barebones:OnPlayerChat(keys)
 			GameRules.VoteOngoing = true
 			Vote = {}
 			numPlayers = 0
-			for i,hero in pairs(Players) do
+			for i,hero in pairs(_G.PlayersTable) do
 				if PlayerResource:IsConnected(i) then
 					numPlayers = numPlayers + 1
 				end
@@ -817,7 +801,7 @@ function barebones:OnPlayerChat(keys)
 					Notifications:TopToAll(success_msg)			
 					Timers:CreateTimer(4, function()	
 						GameRules.VoteOngoing = false
-						for i,hero in pairs(Players) do
+						for i,hero in pairs(_G.PlayersTable) do
 							if hero:IsAlive() then
 								hero:SetBaseMagicalResistanceValue(25)
 							end
@@ -826,6 +810,8 @@ function barebones:OnPlayerChat(keys)
 				end
 			end
 		end
+	elseif string.sub(text, 1, 1) == "-" and (string.find(text, "vote") or string.find(text, "kick")) then
+		GameRules:SendCustomMessage("Type -votekill to start a vote to kill all for reset/stuck/afk.", 0, 1)
 	end
 
 	-- Implementing reset tool, only me and in cheatmode
@@ -856,6 +842,33 @@ function barebones:OnPlayerChat(keys)
 
 				Timers:CreateTimer(1, function()
 					barebones:SetUpLevel(level)
+				end)
+			end)
+		elseif text == "-rr" then
+			local wait = 15
+			local msg = {
+				text = "Resetting 15 second...",
+				duration = wait,
+				style = {color="red", ["font-size"]="60px"}
+			}
+			Notifications:TopToAll(msg)
+
+			-- Cleaning up level, changing currentLevel to stop looping timers
+			local level = _G.currentLevel
+			barebones:CleanLevel(level)
+			_G.currentLevel = -1
+
+			-- Reloading level
+			SendToServerConsole("script_reload")
+
+			Timers:CreateTimer(wait, function()
+				barebones:InitializeGameConstants()
+				barebones:InitializeVectors()
+				_G.currentLevel = level
+
+				Timers:CreateTimer(1, function()
+					barebones:SetUpLevel(level)
+					barebones:CheckPlayersInbounds(level)
 				end)
 			end)
 		end

@@ -34,8 +34,12 @@ function Patrols:Initialize(dataTable)
     unit:AddNewModifier(unit, nil, "modifier_bloodseeker_thirst_speed", {})
   end
 
-  unit:FindAbilityByName("patrol_unit_passive"):SetLevel(1)
-  unit:FindAbilityByName("kill_radius_lua"):SetLevel(1)
+  if unit:FindAbilityByName("patrol_unit_passive") then
+    unit:FindAbilityByName("patrol_unit_passive"):SetLevel(1)
+  end
+  if unit:FindAbilityByName("kill_radius_lua") then
+    unit:FindAbilityByName("kill_radius_lua"):SetLevel(1)
+  end
 
   return unit
 end
@@ -73,6 +77,55 @@ function Patrols:StartPatrol(unit, delay, rate)
   end)
 end
 
+function Patrols:StartPatrolGroupSync(unitTable, delay, rate)
+  local level = unitTable[1].level
+  delay = delay or 0
+  rate = rate or 0.5
+
+  for i,unit in pairs(unitTable) do
+    local goalpoints = CopyTable(unit.waypoints)
+    local first = table.remove(goalpoints, 1)
+    table.insert(goalpoints, first)
+
+    unit.goalpoints = goalpoints
+    unit.goal = goalpoints[1]
+  end
+
+
+  Timers:CreateTimer(delay, function()
+    if level == _G.currentLevel then
+      local count = 0
+
+      for i,unit in pairs(unitTable) do
+        unit:MoveToPosition(unit.goal)
+
+        if CalcDist2D(unit:GetAbsOrigin(), unit.goal) < 5 then
+          count = count + 1
+        end
+      end
+
+      if count == #unitTable then
+        for i,unit in pairs(unitTable) do
+          for j,waypoint in pairs(unit.waypoints) do
+            local posUnit = unit:GetAbsOrigin()
+
+            if CalcDist2D(posUnit, waypoint) < 5 then
+              unit.goal = unit.goalpoints[j]
+            end
+          end
+          unit:MoveToPosition(unit.goal)
+        end
+
+        count = 0
+      end
+
+      return rate
+    else
+      return
+    end
+  end)
+end
+
 function Patrols:MoveToGoalAndDie(unit)
   Timers:CreateTimer(0.03, function()
     if IsValidEntity(unit) then
@@ -101,7 +154,7 @@ end
 --
 --  *******SPAWN*******
 --                        }
---                        } Radii
+--                        } 
 --                        }
 -- ********GOAL********
 function Patrols:GenerateMovingWallPositions(spawn, goal, radii, spacing)
@@ -123,7 +176,7 @@ function Patrols:GenerateMovingWallPositions(spawn, goal, radii, spacing)
   end
 
   for i = 1,numUnits do
-    local mappedDist = (i/numUnits) * (2 * radii) - radii
+    local mappedDist = ((i - 1)/(numUnits - 1)) * (2 * radii) - radii
 
     local spawnX = spawn.x + mappedDist * math.cos(thetaSpawn + math.pi/2)
     local spawnY = spawn.y + mappedDist * math.sin(thetaSpawn + math.pi/2)

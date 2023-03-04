@@ -1,10 +1,15 @@
 function OnStartSafety(trigger)
 	local ent = trigger.activator
+	print(ent:GetName(), " has initially stepped on safety trigger")
+
 	if not ent then return end
+	if not ent:IsHero() then return end
+
+	ent.isSafe = true
+
 	if ent:IsRealHero() and ent:IsAlive() then
-		ent.isSafe = true
 		ent:SetBaseMagicalResistanceValue(100)
-		print(ent:GetName(), " has stepped on safety trigger")
+		print(ent:GetName(), " is safe, setting magic resist")
 		return
 	end
 end
@@ -12,22 +17,35 @@ end
 function OnEndSafety(trigger)
 	local ent = trigger.activator
 	print(ent:GetName(), " has initially stepped off trigger")
+
 	if not ent then return end
+	if not ent:IsHero() then return end
 
 	if ent:IsRealHero() and ent:IsAlive() then
 		ent.isSafe = false
+
+		-- Dealing with magic immunity modifiers
+		if ent:HasModifier("modifier_neutral_spell_immunity") then
+			ent:RemoveModifierByName("modifier_neutral_spell_immunity")
+		end
 
 		-- Dealing with out of bounds spells
 		local hasModifier = false
 		for _,modifierName in pairs(_G.outOfBoundsModifiers) do
 			if ent:HasModifier(modifierName) then
+				print("Found modifier for death trigger", modifierName)
 				hasModifier = true
 			end
 		end
 
+		-- Specific for boots travel, no killing 
+		-- if ent:HasModifier("modifier_boots_travel_lua") then
+		-- 	return
+		-- end
+
 		if hasModifier then
-			local tickRate = 0.1
-			local tickDelay = 0.05
+			local tickRate = 0.06
+			local tickDelay = 0.06
 
 			Timers:CreateTimer(0, function()
 				-- Recheck modifier
@@ -51,7 +69,7 @@ function OnEndSafety(trigger)
 								print("Landed on safe after out of bounds spell")
 								ent.outOfBoundsDeath = false
 							else
-								print("Landed on lava after spell, killing now")
+								print(ent:GetName(), "Landed on lava after spell, killing now")
 								ent.outOfBoundsDeath = true
 								ent:SetBaseMagicalResistanceValue(25)
 							end
@@ -76,8 +94,10 @@ function OnEndSafety(trigger)
 				end
 				return
 			end)
+
+		-- No modifiers, killing
 		else
-			print(ent:GetName(), " will be killed")
+			print(ent:GetName(), " will be killed", ent:GetAbsOrigin())
 			ent:SetBaseMagicalResistanceValue(25)
 		end
 
@@ -90,10 +110,52 @@ function OnStartKill(trigger)
 	if not ent then return end
 	--print(ent:GetName(), " has stepped on trigger")
 	if ent:IsRealHero() and ent:IsAlive() then
+		print(ent:GetName(), "touched kill box, killing")
+
 		ent.isSafe = false
 		ent.outOfBoundsDeath = true
 		ent:SetBaseMagicalResistanceValue(25)
 		return
+	end
+end
+
+-- Stupid hack to bypass trigger killing with setorigin???
+function OnStartKillTemp2(trigger)
+	local ent = trigger.activator
+	if not ent then return end
+	--print(ent:GetName(), " has stepped on trigger")
+	if ent:IsRealHero() and ent:IsAlive() then
+		local tl = Vector(-4056, -2008, 128)
+		local br = Vector(-3910, -2256, 128)
+
+		if not OutsideRectangle(ent, tl, br) then
+			print(ent:GetName(), "touched kill box, killing")
+
+			ent.isSafe = false
+			ent.outOfBoundsDeath = true
+			ent:SetBaseMagicalResistanceValue(25)
+			return
+		end
+	end
+end
+
+-- Stupid hack to bypass trigger killing with setorigin???
+function OnStartKillTemp3(trigger)
+	local ent = trigger.activator
+	if not ent then return end
+	--print(ent:GetName(), " has stepped on trigger")
+	if ent:IsRealHero() and ent:IsAlive() then
+		local tl = Vector(-2336, 752, 128)
+		local br = Vector(-2192, 400, 128)
+
+		if not OutsideRectangle(ent, tl, br) then
+			print(ent:GetName(), "touched kill box, killing")
+
+			ent.isSafe = false
+			ent.outOfBoundsDeath = true
+			ent:SetBaseMagicalResistanceValue(25)
+			return
+		end
 	end
 end
 
@@ -119,13 +181,15 @@ function UpdateCheckpoint(trigger)
 			GameRules:SendCustomMessage("Level " .. tostring(level) .. "!", 0, 1)
 		end
 		if level > 1 and level < 7 then
-			barebones:ReviveAll()
 			barebones:RemoveAllSkills()
+			barebones:RemoveAllModifiers()
 			barebones:CleanLevel(level-1)
 			barebones:SetUpLevel(level)
-			Timers:CreateTimer(1, function()
-				barebones:MoveCreeps(level, {})
+			barebones:CheckPlayersInbounds(level)
+			Timers:CreateTimer(0, function()
+				barebones:ReviveAll()
 			end)
+
 			WebApi:UpdateTimeSplit(level)
 		elseif level == 7 then
 			GameRules.Ongoing = false
@@ -165,7 +229,9 @@ function GiveSkill(trigger)
 		local abil = hero:FindAbilityByName(abilName)
 		local abilSlot = abil:GetAbilityIndex()
 
-		print("Current slot for ", abil:GetAbilityName(), slot, abilSlot + 1)
+		abil:EndCooldown()
+
+		--print("Current slot for ", abil:GetAbilityName(), slot, abilSlot + 1)
 		-- Checking proper slot
 		if slot ~= (abilSlot + 1) then
 			hero:SwapAbilities(abilName, "barebones_empty" .. slot, true, false)
@@ -173,6 +239,9 @@ function GiveSkill(trigger)
 			-- Particles for spell
 			local partname = "particles/generic_hero_status/hero_levelup.vpcf"
 			local part = ParticleManager:CreateParticle(partname, PATTACH_ABSORIGIN_FOLLOW, hero)
+		
+			local pos = hero:GetAbsOrigin()
+			EmitSoundOnLocationForAllies(pos, "General.LevelUp", hero)
 		end
 	end
 end
@@ -187,94 +256,140 @@ function RemoveSkill(trigger)
 		
     for i = 0,5 do
       local abil = hero:GetAbilityByIndex(i)
-      local abilName = abil:GetAbilityName()
-			
-			print(i, removeName, abilName)
-      if removeName == abilName then
-        hero:SwapAbilities(abilName, "barebones_empty" .. (i+1), false, true)
-      end
+
+			if abil then
+				local abilName = abil:GetAbilityName()
+				
+				print(i, removeName, abilName)
+				if removeName == abilName then
+					hero:SwapAbilities(abilName, "barebones_empty" .. (i+1), false, true)
+				end
+			end
     end
 	end
 end
 
--- Trigger rotations
-function RotateOn(trigger)
-	local r1 = 50
-	local r2 = 800
-	local baseTurnRate = 1.5  -- Degrees
-	local adjRate = 0.67
-
-	-- Getting all the triggers
-	local cw1 = Entities:FindByName(nil, "cw1")
-	local ccw1 = Entities:FindByName(nil, "ccw1")
-	local cw2 = Entities:FindByName(nil, "cw2")
-	local ccw2 = Entities:FindByName(nil, "ccw2")
-
-	cw1.count = cw1.count or 0
-	ccw1.count = ccw1.count or 0
-	cw2.count = cw2.count or 0
-	ccw2.count = ccw2.count or 0
-
-	-- Increasing count on current trigger
+function GiveAndRemoveSkill(trigger)
+	print("Give and remove skill triggered")
+	local hero = trigger.activator
 	local trig = trigger.caller
-	trig.count = (trig.count or 0) + 1
-	print("Currently", trig.count, "on triggerblock")
 
-	-- Sorting out which trigger and count
-	local name = trig:GetName()
-	local isCcw = string.find(name, "ccw")
-	local turnRate = isCcw and baseTurnRate or -baseTurnRate
-	local num = string.sub(name, -1)
+	if trig then
+		local trigName = trig:GetName()
 
-	local trigRev
-	local trigOtherA
-	local trigOtherB
+		local level = tonumber(string.sub(trigName, 1, 1))
+		local slot = tonumber(string.sub(trigName, 2, 2))
+		local rest = string.sub(trigName, 3)
 
-	if num == "1" then
-		trigOtherA = cw2
-		trigOtherB = ccw2
-		trigRev = isCcw and cw1 or ccw1
-	elseif num == "2" then
-		trigOtherA = cw1
-		trigOtherB = ccw1
-		trigRev = isCcw and cw2 or ccw2
-	end
+		local sep = string.find(rest, '%.')
+		local giveAbil = string.sub(rest, 1, sep - 1)
+		local removeAbil = string.sub(rest, sep + 1)
 
-	print(trig.count, trigRev.count, trigOtherA.count, trigOtherB.count)
+		if level == _G.currentLevel then
+			-- Adding skill if somehow doesnt have
+			if not hero:FindAbilityByName(giveAbil) then
+				print("Giving skill to player")
+				local tempAbil = hero:AddAbility(giveAbil)
+				tempAbil:SetHidden(true)
+				tempAbil:SetLevel(1)
+			end				
 
-	if trig.count == 1 then
-		Timers:CreateTimer(function()
-			local otherTurning = (trigOtherA.count == 0 and trigOtherB.count > 0) or (trigOtherB.count == 0 and trigOtherA.count > 0)
-			local adjTurnRate = otherTurning and (turnRate * adjRate) or turnRate
+			local abil = hero:FindAbilityByName(giveAbil)
+			local abilSlot = abil:GetAbilityIndex()
+			abil:EndCooldown()
 
-			local colorTurn = otherTurning and Vector(0, 255, 255) or Vector(0, 255, 0)
-
-			if trig.count > 0 and trigRev.count == 0 then
-				ParticleManager:SetParticleControl(trig.part, 1, colorTurn)
-
-				for i,unit in pairs(trig.pheonixes) do
-					local origin = unit:GetAbsOrigin()
-					local forw = unit:GetForwardVector()
-					local newforw = RotateVector2D(forw, adjTurnRate)
-					local newpos = trig.spawn + r1*newforw
-					local move = origin + r2*newforw
-					unit:SetAbsOrigin(newpos)
-					unit:MoveToPosition(move)
-				end
-			elseif trig.count > 0 and trigRev.count > 0 then
-				ParticleManager:SetParticleControl(trig.part, 1, Vector(255, 255, 0))
-				ParticleManager:SetParticleControl(trigRev.part, 1, Vector(255, 255, 0))
-			elseif trig.count == 0 then
-				ParticleManager:SetParticleControl(trig.part, 1, Vector(255, 0, 0))
-				return
+			-- Checking proper slot
+			if slot ~= (abilSlot + 1) then
+				hero:SwapAbilities(giveAbil, "barebones_empty" .. slot, true, false)
+	
+				-- Particles for spell
+				local partname = "particles/generic_hero_status/hero_levelup.vpcf"
+				local part = ParticleManager:CreateParticle(partname, PATTACH_ABSORIGIN_FOLLOW, hero)
+			
+				local pos = hero:GetAbsOrigin()
+				EmitSoundOnLocationForAllies(pos, "General.LevelUp", hero)
 			end
-			return 0.05
-		end)
+
+			-- Removing ability
+			for i = 0,5 do
+				local abilGet = hero:GetAbilityByIndex(i)
+	
+				if abilGet then
+					local abilName = abilGet:GetAbilityName()
+					
+					--print(i, removeName, abilName)
+					if removeAbil == abilName then
+						hero:SwapAbilities(abilName, "barebones_empty" .. (i+1), false, true)
+					end
+				end
+			end
+
+		end
 	end
 end
 
-function RotateOff(trigger)
+function GiveMana(trigger)
+	local hero = trigger.activator
 	local trig = trigger.caller
-	trig.count = trig.count - 1
-	print("Currently", trig.count, "on triggerblock")
+	if trig then
+		if hero:GetMana() < 1 then
+			local pos = hero:GetAbsOrigin()
+
+			local partName = "particles/units/heroes/hero_keeper_of_the_light/keeper_chakra_magic.vpcf"
+			local part = ParticleManager:CreateParticle(partName, PATTACH_ABSORIGIN, hero)
+			
+			local c = 0
+			Timers:CreateTimer(function()
+				if c < 1 then
+					ParticleManager:SetParticleControl(part, 0, hero:GetAbsOrigin())
+					ParticleManager:SetParticleControl(part, 1, hero:GetAbsOrigin())
+					c = c + 0.03
+					return 0.03
+				else
+					return
+				end
+			end)
+
+			EmitSoundOnLocationForAllies(pos, "Hero_KeeperOfTheLight.ChakraMagic.Target", hero)
+
+			hero:SetMana(1)
+			hero.mana = 1
+		end
+	end
+end
+
+function GiveModifier(trigger)
+	local hero = trigger.activator
+	local trig = trigger.caller
+
+	local name = trig:GetName()
+	local level = tonumber(string.sub(name, 1, 1))
+	local modName = string.sub(name, 2)
+
+	if trig and level == _G.currentLevel then
+		if not hero:HasModifier(modName) then
+			hero:AddNewModifier(hero, nil, modName, {})
+		end
+	end
+end
+
+function FixAbuse(trigger)
+	local hero = trigger.activator
+	local trig = trigger.caller
+
+	if trig then
+		local abil1 = hero:FindAbilityByName("tusk_snowball_lua")
+		local abil2 = hero:FindAbilityByName("tusk_snowball_release_lua")
+		local abil3 = hero:FindAbilityByName("tusk_walrus_kick_custom")
+
+		local index1 = abil1:GetAbilityIndex()
+		local index2 = abil2:GetAbilityIndex()
+		local index3 = abil3:GetAbilityIndex()
+
+		if (index1 <= 5 or index2 <= 5) and index3 <= 5 then
+			print("Found both spells, removing 1")
+
+			hero:SwapAbilities("tusk_walrus_kick_custom", "barebones_empty" .. (index3+1), false, true)
+		end
+	end
 end

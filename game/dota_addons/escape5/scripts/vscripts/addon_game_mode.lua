@@ -38,6 +38,8 @@ function Precache(context)
   PrecacheResource("particle", "particles/addons_gameplay/pit_lava_sparks.vpcf", context)
   PrecacheResource("particle", "particles/units/heroes/hero_dark_seer/dark_seer_surge.vpcf", context)
   PrecacheResource("particle", "particles/units/heroes/hero_dark_seer/dark_seer_loadout_surge_rope.vpcf", context)
+  PrecacheResource("particle", "particles/units/heroes/hero_keeper_of_the_light/keeper_chakra_magic.vpcf", context)
+  PrecacheResource("particle", "particles/dev/empty_particle.vpcf", context)
   PrecacheResource("particle_folder", "particles/misc", context)
   PrecacheResource("particle_folder", "particles/beacons", context)
 
@@ -58,6 +60,7 @@ function Precache(context)
   PrecacheResource("soundfile", "soundevents/game_sounds_heroes/game_sounds_lina.vsndevts", context)
   PrecacheResource("soundfile", "soundevents/game_sounds_heroes/game_sounds_magnataur.vsndevts", context)
   PrecacheResource("soundfile", "soundevents/game_sounds_heroes/game_sounds_ogre_magi.vsndevts", context)
+  PrecacheResource("soundfile", "soundevents/game_sounds_heroes/game_sounds_keeper_of_the_light.vsndevts", context)
   PrecacheResource("soundfile", "soundevents/game_sounds_ui_imported.vsndevts", context)
   PrecacheResource("soundfile", "soundevents/game_sounds_items.vsndevts", context)
 
@@ -68,6 +71,13 @@ function Precache(context)
   PrecacheResource("soundfile", "soundevents/game_sounds_heroes/game_sounds_rattletrap.vsndevts", context)
   PrecacheResource("soundfile", "soundevents/game_sounds_heroes/game_sounds_enigma.vsndevts", context)
   PrecacheResource("soundfile", "soundevents/game_sounds_heroes/game_sounds_invoker.vsndevts", context)
+  PrecacheResource("soundfile", "soundevents/game_sounds_heroes/game_sounds_windrunner.vsndevts", context)
+  PrecacheResource("soundfile", "soundevents/game_sounds_heroes/game_sounds_ursa.vsndevts", context)
+  PrecacheResource("soundfile", "soundevents/game_sounds_heroes/game_sounds_weaver.vsndevts", context)
+  PrecacheResource("soundfile", "soundevents/game_sounds_heroes/game_sounds_tiny.vsndevts", context)
+  PrecacheResource("soundfile", "soundevents/game_sounds_heroes/game_sounds_tusk.vsndevts", context)
+  PrecacheResource("soundfile", "soundevents/game_sounds_heroes/game_sounds_tinker.vsndevts", context)
+  PrecacheResource("soundfile", "soundevents/game_sounds_heroes/game_sounds_puck.vsndevts", context)
 
   -- Entire items can be precached by name
 	-- Abilities can also be precached in this way despite the name
@@ -86,6 +96,8 @@ function Precache(context)
 
   PrecacheItemByNameSync("magnataur_skewer_custom", context)
   PrecacheItemByNameSync("magnus_skewer_lua", context)
+  PrecacheItemByNameSync("boots_travel_lua", context)
+  PrecacheItemByNameSync("tusk_snowball_lua", context)
 
   PrecacheItemByNameSync("slark_pounce_custom", context)
   PrecacheItemByNameSync("mirana_leap_custom", context)
@@ -93,6 +105,7 @@ function Precache(context)
   PrecacheItemByNameSync("shredder_timber_chain_custom", context)
   PrecacheItemByNameSync("rattletrap_hookshot_custom", context)
   PrecacheItemByNameSync("invoker_sun_strike_custom", context)
+  PrecacheItemByNameSync("windrunner_gale_force_custom", context)
 
 	-- Entire heroes (sound effects/voice/models/particles) can be precached with PrecacheUnitByNameSync
 	-- Custom units from npc_units_custom.txt can also have all of their abilities and precache{} blocks precached in this way

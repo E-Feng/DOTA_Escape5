@@ -9,63 +9,82 @@ Ability checklist (erase if done/checked):
 - Stolen behavior
 ]]
 --------------------------------------------------------------------------------
-magnus_skewer_lua = class({})
-LinkLuaModifier( "modifier_magnus_skewer_lua", "ability_lua/skewer/modifier_magnus_skewer_lua", LUA_MODIFIER_MOTION_HORIZONTAL )
-LinkLuaModifier( "modifier_magnus_skewer_lua_debuff", "ability_lua/skewer/modifier_magnus_skewer_lua_debuff", LUA_MODIFIER_MOTION_HORIZONTAL )
-LinkLuaModifier( "modifier_magnus_skewer_lua_slow", "ability_lua/skewer/modifier_magnus_skewer_lua_slow", LUA_MODIFIER_MOTION_NONE )
-
+boots_travel_lua = class({})
+LinkLuaModifier("modifier_boots_travel_lua", "ability_lua/boots_travel/boots_travel_lua", LUA_MODIFIER_MOTION_NONE)
 --------------------------------------------------------------------------------
 -- Init Abilities
-function magnus_skewer_lua:Precache( context )
-	PrecacheResource( "soundfile", "soundevents/game_sounds_heroes/game_sounds_magnataur.vsndevts", context )
+function boots_travel_lua:Precache( context )
+	PrecacheResource( "soundfile", "soundevents/game_sounds_heroes/game_sounds_tinker.vsndevts", context )
 	PrecacheResource( "particle", "particles/units/heroes/hero_magnataur/magnataur_skewer.vpcf", context )
 	PrecacheResource( "particle", "particles/units/heroes/hero_magnataur/magnataur_skewer_debuff.vpcf", context )
 end
 
---------------------------------------------------------------------------------
--- Custom KV
-function magnus_skewer_lua:GetCooldown( level )
-	if self:GetCaster():HasScepter() then
-		return self:GetSpecialValueFor( "skewer_cooldown" )
-	end
+-- Modifier for travel boots
+modifier_boots_travel_lua = modifier_boots_travel_lua or class({})
 
-	return self.BaseClass.GetCooldown( self, level )
+function modifier_boots_travel_lua:IsHidden()		  return false end
+function modifier_boots_travel_lua:IsPurgable()		return false end
+function modifier_boots_travel_lua:RemoveOnDeath()	return false end
+
+function modifier_boots_travel_lua:OnCreated()
+  if IsServer() then
+    if not self:GetAbility() then self:Destroy() end
+  end
 end
 
-function magnus_skewer_lua:GetManaCost( level )
-	if self:GetCaster():HasScepter() then
-		return self:GetSpecialValueFor( "skewer_manacost" )
-	end
-
-	return self.BaseClass.GetManaCost( self, level )
+function modifier_boots_travel_lua:OnDestroy()
+  if IsServer() then
+    if not self:GetAbility() then self:Destroy() end
+  end
 end
 
---------------------------------------------------------------------------------
 -- Ability Start
-function magnus_skewer_lua:OnSpellStart()
+function boots_travel_lua:OnSpellStart()
 	-- unit identifier
 	local caster = self:GetCaster()
-	local point = self:GetCursorPosition()
+	local target = self:GetCursorTarget()
+  local ability = self
 
-	-- load data
-	local maxrange = self:GetSpecialValueFor( "range" )
+	-- Particles
+	local particle_caster = "particles/econ/items/tinker/boots_of_travel/teleport_start_bots.vpcf"
+	local particle_target = "particles/econ/items/tinker/boots_of_travel/teleport_end_bots.vpcf"
 
-	local direction = point-caster:GetOrigin()
-	if direction:Length2D() > maxrange then
-		direction.z = 0
-		direction = direction:Normalized()
+	self.effect_caster = ParticleManager:CreateParticle( particle_caster, PATTACH_ABSORIGIN_FOLLOW, caster)
+	self.effect_target = ParticleManager:CreateParticle( particle_target, PATTACH_ABSORIGIN_FOLLOW, target)
 
-		point = caster:GetOrigin() + direction * maxrange
+	-- Play effects
+	local sound_cast = "Hero_Tinker.MechaBoots.Loop"
+	EmitSoundOnLocationForAllies( caster:GetOrigin(), sound_cast, caster )
+
+	caster:AddNewModifier(caster, ability, "modifier_boots_travel_lua", {})
+end
+
+function boots_travel_lua:OnChannelFinish( bInterrupted )
+	local caster = self:GetCaster()
+	local target = self:GetCursorTarget()
+
+	ParticleManager:DestroyParticle(self.effect_caster, false)
+	ParticleManager:DestroyParticle(self.effect_target, false)
+
+	local sound_cast = "Hero_Tinker.MechaBoots.Loop"
+	StopSoundOn( sound_cast, self:GetCaster() )
+
+	Timers:CreateTimer(0.3, function()
+		print("Removing travel modifier")
+		caster:RemoveModifierByName("modifier_boots_travel_lua")
+	end)
+
+	if bInterrupted then
+		caster:RemoveModifierByName("modifier_boots_travel_lua")
+
+		return
 	end
 
-	-- add modifier
-	caster:AddNewModifier(
-		caster, -- player source
-		self, -- ability source
-		"modifier_magnus_skewer_lua", -- modifier name
-		{
-			x = point.x,
-			y = point.y,
-		} -- kv
-	)
+	local targetPos = target:GetAbsOrigin()
+	--caster:SetAbsOrigin(targetPos)
+	FindClearSpaceForUnit(caster, targetPos, false)
+
+	Timers:CreateTimer(0.03, function()
+		ResolveNPCPositions(targetPos, 50)
+	end)
 end

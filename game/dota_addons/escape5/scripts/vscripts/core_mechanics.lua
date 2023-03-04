@@ -1,13 +1,13 @@
 -- This function is to run a thinker to revive heroes upon "contact"
 function barebones:ReviveThinker()
   --print("Number of dead heroes is ", barebones:TableLength(DeadHeroPos))
-  for _, alivehero in pairs(Players) do
+  for _, alivehero in pairs(_G.PlayersTable) do
     if alivehero:IsAlive() then
       --surr = Entities:FindAllInSphere(hero:GetAbsOrigin(), hero:GetModelRadius())
       --for i,ent in pairs(surr) do
       --  print(i, ent, ent:GetClassname(), ent:GetName())
       --end
-      for _, deadhero in pairs(Players) do
+      for _, deadhero in pairs(_G.PlayersTable) do
         if deadhero.deadHeroPos then
           local reviveRadius = alivehero.reviveRadius
 
@@ -119,9 +119,9 @@ end
 
 -- This function is a thinker to check if everyone is dead and revives them
 function barebones:CheckpointThinker()
-  local numPlayers = TableLength(Players)
+  local numPlayers = #_G.PlayersTable
   local deadHeroes = 0
-  for _,hero in pairs(Players) do
+  for _,hero in pairs(_G.PlayersTable) do
     if not hero:IsAlive() then
       deadHeroes = deadHeroes + 1
     end
@@ -159,7 +159,7 @@ function barebones:ReviveAll()
   print("--------Everyone died, reviving all----------")
   local respawnLoc = GameRules.Checkpoint
   local caster
-  for i,hero in pairs(Players) do
+  for i,hero in pairs(_G.PlayersTable) do
     if hero:IsAlive() then
       hero:SetBaseMagicalResistanceValue(25)
     end
@@ -189,6 +189,7 @@ function barebones:SetUpLevel(level)
   for _,funcName in pairs(FuncList[level]) do
     barebones[funcName]()
   end
+
   -- Spawning entities
   for i,entvals in pairs(EntList[level]) do
     --print(entvals[ENT_SPAWN])
@@ -197,7 +198,6 @@ function barebones:SetUpLevel(level)
     local entname = Ents[entnum]
     local pos = entspawn:GetAbsOrigin()
 
-    --print("Spawning ", entvals[ENT_SPAWN], " at ", GameRules:GetDOTATime(false, false))
     if entvals[ENT_UNTIM] == 1 then  -- item
       local item = CreateItem(entname, nil, nil)
       local item_pos = CreateItemOnPositionSync(pos, item)
@@ -206,23 +206,42 @@ function barebones:SetUpLevel(level)
 
       item.spawn = pos
       item.respawn = entvals[MNG_RSPWN]
-      --print("Item indexes, CreateItem: ", item:GetEntityIndex())
-      --print("Item indexes, CreateItemOnPositionSync: ", item_pos:GetEntityIndex())
-      --print("Item indexes, CreateItem: ", item:GetClassname())
-      --print("Item indexes, CreateItemOnPositionSync: ", item_pos:GetClassname())
-    elseif entvals[ENT_UNTIM] == 2 then -- unit
-      local unit = CreateUnitByName(entname, pos, true, nil, nil, DOTA_TEAM_ZOMBIES)
-      print(unit:GetUnitName(), "(", unit:GetEntityIndex(), ") has spawned at", pos)
+
+    -- Spawning a unit
+    elseif entvals[ENT_UNTIM] >= 2 then
+      local team = DOTA_TEAM_ZOMBIES
+      if entvals[ENT_UNTIM] == 3 then
+        team = DOTA_TEAM_GOODGUYS
+      end
+
+      local unit = CreateUnitByName(entname, pos, true, nil, nil, team)
+      print(unit:GetUnitName(), entvals[ENT_SPAWN], "(", unit:GetEntityIndex(), ") has spawned at", pos)
       EntList[level][i][ENT_INDEX] = unit:GetEntityIndex()
+
+      if entname == "npc_dummy_unit" then
+        unit:FindAbilityByName("dummy_unit"):SetLevel(1)
+      end
+
       -- Running appriopriate function/thinker for entity
       unit.level = level
 
+      local unitFunctions = {}
       if entvals[ENT_RFUNC] then
-        barebones[entvals[ENT_RFUNC]](barebones, unit, entvals)
+        if type(entvals[ENT_RFUNC]) == "string" then
+          table.insert(unitFunctions, entvals[ENT_RFUNC])
+        else
+          unitFunctions = entvals[ENT_RFUNC]
+        end
+
+        for _,func in pairs(unitFunctions) do
+          barebones[func](barebones, unit, entvals)
+        end
       end
     end
   end
+
   -- Spawning particles
+  print("--------Spawning particles--------")
   for _,partvals in pairs(PartList[level]) do
     if TableLength(partvals) > 0 then
       Timers:CreateTimer(1, function()
@@ -230,6 +249,7 @@ function barebones:SetUpLevel(level)
       end)
     end
   end
+
   -- Adding messages
   for _,msg in pairs(_G.MsgList[level]) do
     if msg then
@@ -246,17 +266,25 @@ end
 
 -- This function spawns particles
 function barebones:SpawnParticle(partvals)
-  print("-----------Particles spawning------------")
-  local entspawn = Entities:FindByName(nil, partvals[PAR_SPAWN]):GetAbsOrigin()
-  print("Spawn for particle at ", partvals[PAR_SPAWN], entspawn)
-  local dummy = CreateUnitByName("npc_dummy_unit", entspawn, true, nil, nil, DOTA_TEAM_GOODGUYS)
-  dummy:FindAbilityByName("dummy_unit"):SetLevel(1)
-  local part = ParticleManager:CreateParticle(partvals[PAR_FNAME], PATTACH_ABSORIGIN, dummy)
-  ParticleManager:SetParticleControl(part, partvals[PAR_CTRLP], entspawn)
-  partvals[PAR_INDEX] = part
-  table.insert(_G.Extras, dummy:GetEntityIndex())
-  print("Part", part, "spawned at", dummy:GetAbsOrigin())
-  print("-----------Particles done spawning------------")
+  local entities = Entities:FindAllByName(partvals[PAR_SPAWN])
+
+  for _,ent in pairs(entities) do
+    local spawnPos = ent:GetAbsOrigin()
+    spawnPos.z = 128
+
+    print(spawnPos)
+
+    local dummy = CreateUnitByName("npc_dummy_unit", spawnPos, true, nil, nil, DOTA_TEAM_GOODGUYS)
+    dummy:FindAbilityByName("dummy_unit"):SetLevel(1)
+  
+    local part = ParticleManager:CreateParticle(partvals[PAR_FNAME], PATTACH_ABSORIGIN, dummy)
+    ParticleManager:SetParticleControl(part, partvals[PAR_CTRLP], spawnPos)
+  
+    table.insert(_G.ExtraParticles, part)
+    table.insert(_G.Extras, dummy:GetEntityIndex())
+
+    print("Part", part, "spawned at", dummy:GetAbsOrigin())
+  end
 end
 
 -- This function spawns the cheeses for extra life in the beginning
@@ -283,11 +311,16 @@ function barebones:CleanLevel(level)
     print("Removing ", entvals[ENT_SPAWN])
     if entvals[ENT_INDEX] ~= 0 then
       local ent = EntIndexToHScript(entvals[ENT_INDEX])
-      --print(ent, ent~= nil, IsValidEntity(ent))
+
       if ent ~= nil and IsValidEntity(ent) then
-        if entvals[ENT_UNTIM] == 2 and ent:IsAlive() then
+        --print("DEBUG?? ", ent)
+
+        -- Unit
+        if entvals[ENT_UNTIM] >= 2 and ent:IsAlive() then
           print("Ent", ent:GetUnitName(), "ID", entvals[ENT_INDEX], "removed")
           ent:RemoveSelf()
+
+        -- Mango
         elseif entvals[ENT_UNTIM] == 1 and ent:GetName() == "item_mango_custom" then
           --print(ent, ent:GetClassname(), ent:GetName())
           if ent:GetContainer() ~= nil then
@@ -298,6 +331,8 @@ function barebones:CleanLevel(level)
             print("Ent", ent:GetName(), "ID", entvals[ENT_INDEX], "removed")
             ent:RemoveSelf()
           end
+
+        -- Cheese
         elseif entvals[ENT_UNTIM] == 1 and ent:GetName() == "item_cheese_custom" then
           --print(ent, ent:GetClassname(), ent:GetName())
           if ent:GetContainer() ~= nil then
@@ -312,42 +347,91 @@ function barebones:CleanLevel(level)
       end
     end
   end
+
   for _,extra in pairs(_G.Extras) do
     local ent = EntIndexToHScript(extra)
-    print("Ent ID", ent:GetUnitName(), extra, "removed")
-    ent:RemoveSelf()
-  end
-  for _,partvals in pairs(PartList[level]) do
-    if TableLength(partvals) > 0 and partvals[PAR_INDEX] ~= 0 then
-      ParticleManager:DestroyParticle(partvals[PAR_INDEX], true)
-      print("Particle", partvals[PAR_INDEX], "removed")
+
+    if IsValidEntity(ent) and ent ~= nil and ent:IsAlive() then
+      print("Ent ID", ent:GetUnitName(), extra, "removed")
+      ent:RemoveSelf()
     end
   end
   _G.Extras = {}
+
+  for _,extraPart in pairs(_G.ExtraParticles) do
+    ParticleManager:DestroyParticle(extraPart, true)
+    print("Particle", extraPart, "removed")
+  end
+  _G.ExtraParticles = {}
+
   print("----------Cleaning level done------------")
 end
 
 -- This function removes all skills from all players
 function barebones:RemoveAllSkills()
   print("---------Removing All Skills------------")
-  for _,hero in pairs(Players) do
-    -- Removing abilities, legacy
-    --[[for i = 0,5 do
-      local abil = hero:GetAbilityByIndex(i)
-      if abil then
-        Timers:CreateTimer(1, function()
-          abil:SetLevel(0)
-        end)
-      end
-    end]]
-    for i = 0,5 do
-      local abil = hero:GetAbilityByIndex(i)
-      local abilName = abil:GetAbilityName()
-      local last = string.sub(abilName, -1)
-      
-      if tonumber(last) ~= (i+1) then
-        hero:SwapAbilities(abilName, "barebones_empty" .. (i+1), false, true)
+  if not GIVE_ALL_SPELLS then
+    for _,hero in pairs(_G.PlayersTable) do
+      -- Removing abilities, legacy
+      --[[for i = 0,5 do
+        local abil = hero:GetAbilityByIndex(i)
+        if abil then
+          Timers:CreateTimer(1, function()
+            abil:SetLevel(0)
+          end)
+        end
+      end]]
+      for i = 0,5 do
+        local abil = hero:GetAbilityByIndex(i)
+        local abilName = abil:GetAbilityName()
+        local last = string.sub(abilName, -1)
+        
+        if tonumber(last) ~= (i+1) then
+          hero:SwapAbilities(abilName, "barebones_empty" .. (i+1), false, true)
+        end
       end
     end
+  end
+end
+
+-- This function removes all modifiers from all players
+function barebones:RemoveAllModifiers()
+  print("---------Removing All Modifiers------------")
+  for _,hero in pairs(_G.PlayersTable) do
+    for _,modName in pairs(_G.modifierList) do
+      if hero:HasModifier(modName) then
+        hero:RemoveModifierByName(modName)
+      end
+    end
+  end
+end
+
+-- This function checks to keeps players in bounds if present
+function barebones:CheckPlayersInbounds(level)
+  local tlName = "bounds_tl" .. level
+  local brName = "bounds_br" .. level
+
+  local tlEnt = Entities:FindByName(nil, tlName)
+  local brEnt = Entities:FindByName(nil, brName)
+
+  if tlEnt and brEnt then
+    print("--------Starting players inbound check---------")
+    local tlPos = tlEnt:GetAbsOrigin()
+    local brPos = brEnt:GetAbsOrigin()
+
+    Timers:CreateTimer(2, function()
+      if _G.currentLevel == level then
+        local heroesOutside = GetHeroesOutsideRectangle(tlPos, brPos, true)
+
+        for _,hero in pairs(heroesOutside) do
+          -- hero:ForceKill(true)
+          hero:SetBaseMagicalResistanceValue(25)
+        end
+
+        return 0.25
+      else
+        return
+      end
+    end)
   end
 end

@@ -1,125 +1,219 @@
-local phxTable1 = {}
-local phxTable2 = {}
+function barebones:SelectableSpawner()
+	print("Starting selectable spawner")
+	local spawn = Entities:FindByName(nil, "spawn5"):GetAbsOrigin()
+	local goal = Entities:FindByName(nil, "goal5"):GetAbsOrigin()
 
--- This function is the setup for the pheonix
-function barebones:PheonixInitial()
-  print("Setup for pheonix started")
-  local spawn1 = Entities:FindByName(nil, "pheonix1"):GetAbsOrigin()
-  local spawn2 = Entities:FindByName(nil, "pheonix2"):GetAbsOrigin()
-  local spawns = {spawn1, spawn2}
-  local beams = {4, 4}
-  local r = 50
-  local level = 5
+	local unitName = "npc_creep_patrol_selectable"
+	local rate = 5
+	local ms = 175
 
-	local angleOffset = 45
-	local zSpawn = 100  -- Lowering to the ground a bit, maybe doesnt work
+	Timers:CreateTimer(1, function()
+		if _G.currentLevel == 5 then
+			local unit = Patrols:Initialize({
+				name = unitName, 
+				spawn = spawn,
+				goal = goal,
+				ms = ms,
+				phased = false
+			})
+			barebones:WalrusKickMinistunThinker(unit, nil)
+			barebones:LowerTetherThinker(unit, spawn)
 
-  local triggerList = {"cw1", "ccw1", "cw2", "ccw2"}
+			Patrols:MoveToGoalAndDie(unit)
 
-  -- Creating the pheonixes
-  for i = 1,2 do
-    local beam = beams[i]
-    local spawn = spawns[i]
-    for j = 1,beam do
-      local angle = math.rad((360/beam)*(j-1)) + angleOffset
-      local pos = Vector(spawn.x + r*math.cos(angle), spawn.y + r*math.sin(angle), zSpawn)
-      local unit = CreateUnitByName("npc_pheonix", pos, true, nil, nil, DOTA_TEAM_ZOMBIES)
-      unit:SetForwardVector(Vector(math.cos(angle), math.sin(angle), 0))
-      local abil = unit:FindAbilityByName("sun_ray_datadriven")
-      Timers:CreateTimer(2, function()
-        unit:CastAbilityNoTarget(abil, -1)
-      end)
-
-      if i == 1 then
-        table.insert(phxTable1, unit)
-      elseif i == 2 then
-        table.insert(phxTable2, unit)
-      end
-
-      table.insert(Extras, unit:GetEntityIndex())
-    end
-  end
-
-  -- Creating the triggers
-  Timers:CreateTimer(3, function()
-    for i,trigName in pairs(triggerList) do
-      local block = Entities:FindByName(nil, trigName)
-      block.part = PartList[level][i][PAR_INDEX]
-      ParticleManager:SetParticleControl(block.part, 1, Vector(255, 0, 0))
-
-      if string.sub(trigName, -1) == "1" then
-        block.pheonixes = phxTable1
-        block.spawn = spawn1
-      elseif string.sub(trigName, -1) == "2" then
-        block.pheonixes = phxTable2
-        block.spawn = spawn2
-      end
-    end
-  end)
-end
-
--- Sun ray datadriven scripts
-function SunRay(event)
-	print("SunRay casted")
-	local caster = event.caster
-	local abil = event.ability
-	local turnrate = event.turn_rate
-	local beamrange = event.beam_range
-	local partname = "particles/units/heroes/hero_phoenix/phoenix_sunray.vpcf"
-	Timers:CreateTimer(0.5, function()
-		local endcap = CreateUnitByName("npc_dummy_unit", caster:GetAbsOrigin(), false, caster, caster, caster:GetTeam())
-		endcap:FindAbilityByName("dummy_unit"):SetLevel(1)
-		local part = ParticleManager:CreateParticle(partname, PATTACH_ABSORIGIN, caster)
-		ParticleManager:SetParticleControlEnt(part, 0, caster, PATTACH_POINT_FOLLOW, "attach_hitloc", caster:GetAbsOrigin(), true)
-		ParticleManager:SetParticleControl(part, 1, endcap:GetAbsOrigin())
-		local endcapSoundName = "Hero_Phoenix.SunRay.Beam"
-		StartSoundEvent(endcapSoundName, endcap)
-		Timers:CreateTimer(function()
-			if IsValidEntity(caster) then
-				if caster:HasModifier("modifier_sun_ray") then
-					local forw = caster:GetForwardVector()
-					local origin = caster:GetAbsOrigin()
-					local endcapPos = origin + beamrange * forw
-					endcapPos = GetGroundPosition(endcapPos, nil)
-					endcapPos.z = endcapPos.z + 92
-					endcap:SetAbsOrigin(endcapPos)
-					ParticleManager:SetParticleControl(part, 1, endcapPos)
-					--print(endcapPos, endcap:GetAbsOrigin())
-					return 0.03
-				else
-					ParticleManager:DestroyParticle(part, false)
-					StopSoundEvent(endcapSoundName, endcap)
-					endcap:RemoveSelf()
-					return
-				end
-			else
-				return
-			end
-		end)
+			return rate
+		else
+			return
+		end
 	end)
 end
 
-function SunRayCheck(event)
-	local caster = event.caster
-	local abil = event.ability
-	local radius = event.path_radius - 25
-	local beamrange = event.beam_range
-	local dmg = event.base_dmg
-	local origin = caster:GetAbsOrigin()
-	local forw = caster:GetForwardVector()
-	local endcap = origin + beamrange * forw
-	local table = FindUnitsInLine(DOTA_TEAM_GOODGUYS, 
-								  origin, endcap, nil, radius, 
-								  DOTA_UNIT_TARGET_TEAM_BOTH, 
-								  DOTA_UNIT_TARGET_HERO, 
-								  FIND_ANY_ORDER)
-	--print(table, #table)
-	for i,unit in pairs(table) do
-		local damagetable = {victim = unit, 
-							 attacker = caster, 
-							 damage = dmg, 
-							 damage_type = DAMAGE_TYPE_PURE,
-							 ability = abil}
-		ApplyDamage(damagetable)
-	end
+function barebones:SnowballCleanup()
+	print("Starting snowball particle cleanup")
+	local partName = "particles/dev/empty_particle.vpcf"
+
+	local rate = 10
+
+  local dummy = CreateUnitByName("npc_dummy_unit", Vector(0, 0, 0), true, nil, nil, DOTA_TEAM_GOODGUYS)
+  dummy:FindAbilityByName("dummy_unit"):SetLevel(1)
+
+	local prevNum = nil
+
+	Timers:CreateTimer(5, function()
+		if _G.currentLevel == 5 then
+			local num = ParticleManager:CreateParticle(partName, PATTACH_ABSORIGIN, dummy)
+			
+			local respawnParticles = {}
+			for _,hero in pairs(_G.PlayersTable) do
+				table.insert(respawnParticles, hero.particleNumber)
+			end
+
+			if prevNum then
+				for i = prevNum,num do
+					-- Dont cleanup respawn particles
+					if not TableContains(respawnParticles, i) then
+						Timers:CreateTimer(20, function()
+							ParticleManager:ReleaseParticleIndex(i)
+						end)
+					end
+				end
+			end
+
+			prevNum = num
+
+			return rate
+		else
+			return
+		end
+
+	end)
 end
+
+-- function barebones:ZombieSpawner()
+-- 	print("Starting zombie spawner")
+-- 	local center = Entities:FindByName(nil, "center5"):GetAbsOrigin()
+
+-- 	local topleft = Entities:FindByName(nil, "tl5"):GetAbsOrigin()
+-- 	local botright = Entities:FindByName(nil, "br5"):GetAbsOrigin()
+
+-- 	local x1 = topleft.x
+-- 	local x2 = botright.x
+-- 	local y1 = botright.y
+-- 	local y2 = topleft.y
+
+-- 	local width = math.abs(x1 - x2)
+-- 	local height = math.abs(y1 - y2)
+
+-- 	Timers:CreateTimer(1, function()
+-- 		if _G.currentLevel == 5 then
+-- 			local targets = GetHeroesInsideRectangle(topleft, botright, true)
+-- 			print(#targets, targets)
+
+-- 			for _,target in pairs(targets) do
+-- 				local unit = CreateUnitByName("npc_creep_patrol", center, true, nil, nil, DOTA_TEAM_ZOMBIES)
+-- 				table.insert(_G.Extras, unit:GetEntityIndex())
+
+-- 				local targetPos = target:GetAbsOrigin()
+
+-- 				Timers:CreateTimer(0, function()
+-- 					if IsValidEntity(unit) then
+-- 						unit:MoveToPositionAggressive(target:GetAbsOrigin())
+-- 						return 0.25
+-- 					else
+-- 						return
+-- 					end
+-- 				end)
+-- 			end
+
+-- 			return 5
+-- 		else
+-- 			return
+-- 		end
+-- 	end)
+-- end
+
+-- -- This function triggers the start
+-- function barebones:ArenaSetup()
+-- 	print("Starting setup for arena")
+-- 	local center = Entities:FindByName(nil, "arena5"):GetAbsOrigin()
+
+-- 	local r = 500
+-- 	local rTrigger = 100
+
+-- 	local particleName = "particles/misc/cw.vpcf"
+-- 	local particleCPColor = 1
+-- 	local particleColorOff = Vector(255, 0, 0)
+-- 	local particleColorOn = Vector(0, 255, 0)
+
+-- 	local particleCPPosition = 0
+-- 	local particlePositionHidden = Vector(0, 0, -128)
+
+-- 	local numPlayers = #_G.PlayersTable
+-- 	local angleIncrement = 360/numPlayers
+
+-- 	local isTriggersActive = true
+-- 	local triggersTable = {}
+
+-- 	-- Spawning particles for triggers
+-- 	for i = 1, numPlayers do
+-- 		local angleRad = math.rad(angleIncrement * (i-1))
+-- 		local spawn = CalculatePositionPolar(center, r, angleRad)
+
+-- 		local dummy = CreateUnitByName("npc_dummy_unit", spawn, true, nil, nil, DOTA_TEAM_GOODGUYS)
+-- 		dummy:FindAbilityByName("dummy_unit"):SetLevel(1)
+
+-- 		local particleNumber = ParticleManager:CreateParticle(particleName, PATTACH_ABSORIGIN, dummy)
+-- 		ParticleManager:SetParticleControl(particleNumber, particleCPColor, particleColorOff)
+
+-- 		table.insert(triggersTable, {spawn, particleNumber})
+
+-- 		table.insert(_G.Extras, dummy:GetEntityIndex())
+-- 		table.insert(_G.ExtraParticles, particleNumber)
+-- 	end
+
+-- 	print("Triggers Particle Table: ")
+-- 	PrintTable(triggersTable)
+
+-- 	Timers:CreateTimer(1, function()
+-- 		if _G.currentLevel == 5 then
+-- 			if isTriggersActive then
+-- 				local count = 0
+
+-- 				for _,trigger in pairs(triggersTable) do
+-- 					local spawn = trigger[1]
+-- 					local particleNumber = trigger[2]
+					
+-- 					local targets = FindUnitsInRadius(
+-- 						DOTA_TEAM_GOODGUYS,
+-- 						spawn,
+-- 						nil,
+-- 						rTrigger,
+-- 						DOTA_UNIT_TARGET_TEAM_FRIENDLY,
+-- 						DOTA_UNIT_TARGET_HERO,
+-- 						DOTA_UNIT_TARGET_FLAG_NONE,
+-- 						FIND_ANY_ORDER,
+-- 						false
+-- 					)
+-- 					if #targets > 0 then
+-- 						count = count + 1
+-- 						print("on", particleNumber, particleCPColor, particleColorOn)
+-- 						ParticleManager:SetParticleControl(particleNumber, particleCPColor, particleColorOn)
+-- 					else
+-- 						ParticleManager:SetParticleControl(particleNumber, particleCPColor, particleColorOff)
+-- 					end
+-- 				end
+
+-- 				if count == numPlayers then
+-- 					for _,trigger in pairs(triggersTable) do
+-- 						ParticleManager:SetParticleControl(trigger[2], particleCPPosition, particlePositionHidden)
+-- 						isTriggersActive = false 
+-- 					end
+
+-- 					-- Start level function
+-- 					print("Starting level 5..........")
+
+-- 					return
+-- 				end
+-- 			else
+-- 				-- Triggers not active, check if all dead to reactivate
+-- 				local isAllDead = true
+-- 				for _,hero in pairs(_G.PlayersTable) do
+-- 					if hero:IsAlive() then
+-- 						isAllDead = false
+-- 					end
+-- 				end
+
+-- 				if isAllDead then
+-- 					Timers:CreateTimer(2, function()
+-- 						isTriggersActive = true
+-- 					end)
+-- 				end
+-- 			end
+
+-- 			return 1
+-- 		else
+-- 			-- Function end
+-- 			return
+-- 		end
+-- 	end)
+-- end

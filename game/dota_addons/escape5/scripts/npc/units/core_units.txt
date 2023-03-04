@@ -33,6 +33,38 @@
     //"CombatClassDefend"         "DOTA_COMBAT_CLASS_DEFEND_BASIC"
     //"UnitRelationshipClass"             "DOTA_NPC_UNIT_RELATIONSHIP_TYPE_DEFAULT"
   }
+  
+  "npc_creep_patrol_selectable"
+  {        
+    // General   
+    //----------------------------------------------------------------                            
+    "Model"                 "models/creeps/lane_creeps/creep_bad_ranged/lane_dire_ranged.vmdl" // Model.
+    "BaseClass"             "npc_dota_creature"
+    "Level"                 "1"
+    "ModelScale"               "1"
+    
+    // Abilities
+    //----------------------------------------------------------------
+    "Ability1"              "patrol_unit_passive_selectable"
+    "Ability2"              ""
+    "Ability3"              ""
+    "Ability4"              ""
+
+    // Bounds
+    //----------------------------------------------------------------
+    "RingRadius"              "0"
+    "BoundsHullName"          "DOTA_HULL_SIZE_SMALL"
+
+    // Movement
+    //----------------------------------------------------------------
+    "MovementCapabilities"              "DOTA_UNIT_CAP_MOVE_GROUND"
+    "MovementSpeed"             "300"
+    
+    "StatusHealth"                "1"
+    "StatusMana"                  "0" 
+    "StatusManaRegen"             "0"        
+    "StatusStartingMana"          "0"  
+  }
 
   "npc_creep_patrol_no_turn"
   {        
@@ -131,7 +163,7 @@
     // Movement
     //----------------------------------------------------------------
     "MovementCapabilities"    "DOTA_UNIT_CAP_MOVE_GROUND"
-    "MovementSpeed"       "500"   
+    "MovementSpeed"       "600"   
     "MovementTurnRate"      "5" 
 
     // Mana and Health
@@ -214,7 +246,7 @@
     
     // Abilities
     //----------------------------------------------------------------
-    "Ability1"              ""
+    "Ability1"              "patrol_unit_passive_selectable"
     "Ability2"              ""
     "Ability3"              ""
     "Ability4"              ""
@@ -228,7 +260,12 @@
     //----------------------------------------------------------------
     "MovementCapabilities"              "DOTA_UNIT_CAP_MOVE_GROUND"
     "MovementSpeed"             "300"
-    
+
+    // Mana and Health
+    //----------------------------------------------------------------
+    "StatusHealth"                "1"
+    "StatusHealthRegen"            "1"
+    "StatusMana"                   "1" 
   }
 
   "npc_dummy_unit"

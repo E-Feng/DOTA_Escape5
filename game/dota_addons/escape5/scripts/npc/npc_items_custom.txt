@@ -227,8 +227,8 @@
 
     "OnSpellStart"
     {
-        "SpendCharge" 
-        {}
+        // "SpendCharge" 
+        // {}
         "RunScript"
         {
             "Target"        "TARGET"
@@ -237,18 +237,18 @@
             "mana_amount"   "%mana_amount"
         }
 
-        "FireSound"
-        {
-            "Target"        "CASTER"
-            "EffectName"    "DOTA_Item.Mango.Activate"
-        }
+        // "FireSound"
+        // {
+        //     "Target"        "CASTER"
+        //     "EffectName"    "DOTA_Item.Mango.Activate"
+        // }
 
-        "FireEffect"
-        {
-            "Target"            "TARGET"
-            "EffectName"        "particles/items3_fx/mango_active.vpcf"
-            "EffectAttachType"  "follow_origin"
-        }
+        // "FireEffect"
+        // {
+        //     "Target"            "TARGET"
+        //     "EffectName"        "particles/items3_fx/mango_active.vpcf"
+        //     "EffectAttachType"  "follow_origin"
+        // }
     }
 
     "OnOwnerDied"
@@ -443,7 +443,7 @@
 
 		// Stats
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCastRange"				"0"
+		"AbilityCastRange"				"99999"
 		"AbilityCastPoint"				"0.0"
 		"AbilityCooldown"				"0"
 		"AbilityManaCost"				"0"

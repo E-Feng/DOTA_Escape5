@@ -1,16 +1,21 @@
--- This function spawns the poles for hookshot
-function barebones:SpawnPoles()
-  print("Spawning poles for hookshot")
-  local units = Entities:FindAllByName("hookshot_pole")
+-- This function spawns the friendly units for tp
+function barebones:SpawnFriendlyPatrols()
+  print("Spawning friendly patrols for tp")
+  local entList = {
+    {"f1a", "f1b"},
+    {"f2a", "f2b"}
+  }
 
-  for i,unit in pairs(units) do
-    local pos = unit:GetAbsOrigin()
-    pos.z = 60
-    local pole = CreateUnitByName("npc_hook_pole", pos, false, nil, nil, DOTA_TEAM_GOODGUYS)
-    local abil = pole:AddAbility("patrol_unit_no_bar_unselectable_passive")
-    abil:SetLevel(1)
+  for i,waypoints in pairs(entList) do
+    local spawn = Entities:FindByName(nil, waypoints[1]):GetAbsOrigin()
+    local unit = CreateUnitByName("npc_friendly", pos, false, nil, nil, DOTA_TEAM_GOODGUYS)
 
-    print("Hookshot pole created, id: ", pole:GetEntityIndex())
-    table.insert(Extras, pole:GetEntityIndex())
+    unit:SetBaseMoveSpeed(300)
+    unit.waypoints = waypoints
+
+    Patrols:StartPatrol(unit)
+
+    print("Friendly patrol created, id: ", unit:GetEntityIndex())
+    table.insert(Extras, unit:GetEntityIndex())
   end
 end

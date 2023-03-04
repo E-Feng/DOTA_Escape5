@@ -1,11 +1,11 @@
 -- Debugging purposes and level design
 
-USE_LEVEL_DEBUG = true
-LEVEL_DEBUG = 3
+USE_LEVEL_DEBUG = false
+LEVEL_DEBUG = 4
 
-GIVE_ALL_SPELLS = true
-GIVE_IMMO_SPELL = false
-GIVE_BLINK = false
+GIVE_ALL_SPELLS = false
+GIVE_IMMO_SPELL = true
+GIVE_BLINK = USE_LEVEL_DEBUG
 
 -- Constants
 BEACON_NORMAL = 84
@@ -22,12 +22,12 @@ UNIVERSAL_SHOP_MODE = false             -- Should the shops contain all items?
 ALLOW_SAME_HERO_SELECTION = true       -- Should we let people select the same hero as each other
 LOCK_TEAMS = false                      -- Should we Lock (true) or unlock (false) team assignemnt. If team assignment is locked players cannot change teams.
 
-CUSTOM_GAME_SETUP_TIME = 20           -- How long should custom game setup last - the screen where players pick a team?
-HERO_SELECTION_TIME = 20              -- How long should we let people select their hero? Should be at least 5 seconds.
-HERO_SELECTION_PENALTY_TIME = 20      -- How long should the penalty time for not picking a hero last? During this time player loses gold.
+CUSTOM_GAME_SETUP_TIME = USE_LEVEL_DEBUG and 1 or 20 -- How long should custom game setup last - the screen where players pick a team?
+HERO_SELECTION_TIME = USE_LEVEL_DEBUG and 3 or 20 -- How long should we let people select their hero? Should be at least 5 seconds.
+HERO_SELECTION_PENALTY_TIME = USE_LEVEL_DEBUG and 1 or 20 -- How long should the penalty time for not picking a hero last? During this time player loses gold.
 ENABLE_BANNING_PHASE = false            -- Should we enable banning phase? Set to true if "EnablePickRules" is "1" in 'addoninfo.txt'
 BANNING_PHASE_TIME = 0               -- How long should the banning phase last? This will work only if "EnablePickRules" is "1" in 'addoninfo.txt'
-STRATEGY_TIME = 5                    -- How long should strategy time last? Bug: You can buy items during strategy time and it will not be spent!
+STRATEGY_TIME = USE_LEVEL_DEBUG and 1 or 5 -- How long should strategy time last? Bug: You can buy items during strategy time and it will not be spent!
 SHOWCASE_TIME = 0                    -- How long should show case time be?
 PRE_GAME_TIME = 2                    -- How long after showcase time should the horn blow and the game start?
 POST_GAME_TIME = 60                   -- How long should we let people stay around before closing the server automatically?

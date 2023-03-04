@@ -1,4 +1,10 @@
 function MangoEaten( event )
+  --PrintTable(event)
+  local target = event.target
+  local caster = event.caster
+
+  if target:GetUnitName() ~= "npc_gate" then return true end
+
   local mana = event.mana_amount
   local level = _G.currentLevel
   local item = event.ability
@@ -8,10 +14,12 @@ function MangoEaten( event )
           EntList[level][i][ENT_INDEX] = 0
       end
   end
-  event.target:GiveMana(mana)
+  target:GiveMana(mana)
 
   local partname = "particles/items3_fx/mango_active.vpcf"
-  local part = ParticleManager:CreateParticle(partname, PATTACH_ABSORIGIN, event.target)
+  local part = ParticleManager:CreateParticle(partname, PATTACH_ABSORIGIN, target)
+
+  EmitSoundOnLocationForAllies(caster:GetAbsOrigin(), "DOTA_Item.Mango.Activate", caster)
 
   item:RemoveSelf()
 end

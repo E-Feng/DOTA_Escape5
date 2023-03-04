@@ -32,7 +32,7 @@
 
 		// Ability Resource
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"0"
+		"AbilityCooldown"				"1"
 		"AbilityManaCost"				"0"
 
 		// Damage
@@ -50,7 +50,7 @@
 			"02"
 			{
 				"var_type"				"FIELD_INTEGER"
-				"range"					"1500 1500 1500 1500"
+				"range"					"5000"
 			}
 			"03"
 			{
@@ -65,7 +65,7 @@
 			"05"
 			{
 				"var_type"				"FIELD_FLOAT"
-				"slow_duration"				"3.25"
+				"slow_duration"				"2"
 			}			
 			"06"
 			{
@@ -85,12 +85,12 @@
 			"09"
 			{
 				"var_type"				"FIELD_FLOAT"
-				"skewer_cooldown"				"6"
+				"skewer_cooldown"				"1"
 			}
 			"10"
 			{
 				"var_type"				"FIELD_INTEGER"
-				"skewer_manacost"				"40"
+				"skewer_manacost"				"0"
 			}
 		}
 	}

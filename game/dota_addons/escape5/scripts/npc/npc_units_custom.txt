@@ -40,20 +40,20 @@
     //"UnitRelationshipClass"             "DOTA_NPC_UNIT_RELATIONSHIP_TYPE_DEFAULT"
   }
   
-  "npc_techies"
+  "npc_tiny"
   {        
     // General   
     //----------------------------------------------------------------                            
-    "Model"                 "models/heroes/techies/techies.vmdl" // Model.
+    "Model"                 "models/heroes/tiny/tiny.vmdl" // Model.
     "BaseClass"             "npc_dota_creature"
     "Level"                 "7"
     "ModelScale"               "0.5"
     
     // Abilities
     //----------------------------------------------------------------
-    "Ability1"              "techies_passive"
-    "Ability2"              "techies_suicide_custom"
-    "Ability3"              "kill_radius_lua"
+    "Ability1"              "patrol_unit_passive"
+    "Ability2"              "tiny_toss_custom"
+    "Ability3"              ""
     "Ability4"              ""
 
     // Bounds
@@ -77,23 +77,23 @@
       {
         "Wearable1"
         {
-          "ItemDef" "490"
+          "ItemDef" "493"
         }
         "Wearable2"
         {
-          "ItemDef" "491"
+          "ItemDef" "494"
         }
         "Wearable3"
         {
-          "ItemDef" "492"
+          "ItemDef" "495"
         }
         "Wearable4"
         {
-          "ItemDef" "487"
+          "ItemDef" "496"
         }
         "Wearable5"
         {
-          "ItemDef" "489"
+          "ItemDef" "497"
         }
       }
     }
@@ -140,7 +140,7 @@
     //----------------------------------------------------------------
     "Ability1"              "patrol_unit_passive"
     //"Ability1"              ""
-    "Ability2"              ""
+    "Ability2"              "magnus_skewer_lua"
     "Ability3"              ""
     "Ability4"              ""
 
@@ -198,7 +198,7 @@
     
     // Abilities
     //----------------------------------------------------------------
-    "Ability1"              "patrol_unit_passive"
+    "Ability1"              ""
     "Ability2"              ""
     "Ability3"              ""
     "Ability4"              ""
